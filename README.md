@@ -1,59 +1,379 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Tugas 5 - Book Sales API
+**Nama:** Fatkur Rohman Irham  
+**Kampus:** Politeknik Negeri Banyuwangi  
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Proyek ini merupakan bagian dari tugas pembuatan API untuk sistem penjualan buku menggunakan Laravel. Pada tugas ini, fokus utamanya adalah melengkapi operasi CRUD dan mengoptimalkan penulisan kode routing.
 
-## About Laravel
+## Instruksi Tugas
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+1. **Lengkapi Fitur CRUD:** 
+   - Membuat fungsi `Show` (detail), `Update` (ubah), dan `Destroy` (hapus) untuk tabel **Genre** dan **Author**.
+2. **Validasi Data Tidak Ditemukan:** 
+   - Memberikan respon yang tepat (seperti 404 Not Found) ketika data yang dicari, diubah, atau dihapus tidak ada di dalam database.
+3. **Optimisasi Routing:** 
+   - Mengubah deklarasi rute di `routes/api.php` dengan menggunakan metode `Route::apiResource`.
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+---
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+## Hasil Pengerjaan Tugas
 
-## Learning Laravel
+### Bagian 1: Show, Update, Destroy pada Tabel Genre
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+#### A. Kode Implementasi (`GenreController.php`)
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+```php
+<?php
 
-## Laravel Sponsors
+namespace App\Http\Controllers;
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+use Illuminate\Http\Request;
+use App\Models\Genre;
+use Illuminate\Support\Facades\Validator;
 
-### Premium Partners
+class GenreController extends Controller
+{
+   public function index()
+    {
+        $genres = Genre::all();
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+        if ($genres->isEmpty()) {
+            return response()->json([
+                "success" => true,
+                "message" => "No data found",
+            ]);
+        }
+        return response()->json([
+            "success" => true,
+            "message" => "get ALL Resource",
+            "data" => $genres
+        ],200);
+    }
+    public function show(string $id)
+    {
+        $genre = Genre::find($id);
+        if (!$genre) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Resource not found'
+            ], 404);
+        }
 
-## Contributing
+        return response()->json([
+            'success' => true,
+            'message' => 'get detail resource',
+            'data' => $genre,
+        ], 200);
+    }
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+    public function update(string $id, Request $request)
+    {
+        $genre = Genre::find($id);
 
-## Code of Conduct
+        if (!$genre) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Resource not found'
+            ], 404);
+        }
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+        $validator = Validator::make($request->all(), [
+            'name' => 'required|string|max:255',
+            'description' => 'nullable|string',
+        ]);
 
-## Security Vulnerabilities
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => $validator->errors()
+            ], 422);
+        }
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+        $genre->update([
+            'name' => $request->name,
+            'description' => $request->description,
+        ]);
 
-## License
+        return response()->json([
+            'success' => true,
+            'message' => 'Resource updated successfully!',
+            'data' => $genre
+        ], 200);
+    }
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+    public function destroy(string $id)
+    {
+        $genre = Genre::find($id);
+
+        if (!$genre) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Resource not found'
+            ], 404);
+        }
+
+        $genre->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'DELETE data resource'
+        ], 200);
+    }
+    public function store(Request $request)
+    {
+        // 1. validator
+        $validator = Validator::make($request->all(), [
+            'name' => 'required|string|max:255',
+            'description' => 'nullable|string',
+        ]);
+
+        // 2. check validator error
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => $validator->errors()
+            ], 422);
+        }
+
+        // 3. insert data
+        $genre = Genre::create([
+            'name' => $request->name,
+            'description' => $request->description,
+        ]);
+
+        // 4. response
+        return response()->json([
+            'success' => true,
+            'message' => 'resource added successfully!',
+            'data' => $genre
+        ], 201);
+    }
+}
+
+```
+
+#### B. Screenshot Pengujian Endpoint Genre
+
+**1. Show Genre (GET)**
+<img width="723" height="432" alt="image" src="https://github.com/user-attachments/assets/a1cfe8e8-91b8-4eee-8609-7f61bf51e652" />
+**2. Update Genre (PUT/PATCH)**
+<img width="723" height="366" alt="image" src="https://github.com/user-attachments/assets/a39d2227-b047-49b9-89bd-24b3783bcd24" />
+
+**3. Destroy Genre (DELETE)**
+<img width="718" height="353" alt="image" src="https://github.com/user-attachments/assets/78780dc7-ac23-4a56-9499-2cd4eaa4bb11" />
+
+
+---
+
+### Bagian 2: Show, Update, Destroy pada Tabel Author
+
+#### A. Kode Implementasi (`AuthorController.php`)
+
+```php
+<?php
+
+namespace App\Http\Controllers;
+
+use Illuminate\Http\Request;
+use App\Models\Author;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Storage;
+
+class AuthorController extends Controller
+{
+   public function index()
+    {
+        $authors = Author::all();
+
+        if ($authors->isEmpty()) {
+            return response()->json([
+                "success" => true,
+                "message" => "No data found",
+            ]);
+        }
+        return response()->json([
+            "success" => true,
+            "message" => "get ALL Resource",
+            "data" => $authors
+        ],200);
+    }
+    public function store(Request $request)
+    {
+        // 1. validator
+        $validator = Validator::make($request->all(), [
+            'name' => 'required|string|max:255',
+            'bio' => 'nullable|string',
+            'photo' => 'required|image|mimes:jpeg,jpg,png|max:2048', 
+        ]);
+
+        // 2. check validator error
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => $validator->errors()
+            ], 422);
+        }
+
+        // 3. upload image (photo)
+        $image = $request->file('photo');
+        $image->store('authors', 'public');
+
+        // 4. insert data
+        $author = Author::create([
+            'name' => $request->name,
+            'bio' => $request->bio,
+            'photo' => $image->hashName(),
+        ]);
+
+        // 5. response
+        return response()->json([
+            'success' => true,
+            'message' => 'resource added successfully!',
+            'data' => $author
+        ], 201);
+    }
+    public function show(string $id)
+    {
+        $author = Author::find($id);
+
+        if (!$author) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Resource not found'
+            ], 404);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'get detail resource',
+            'data' => $author,
+        ], 200);
+    }
+
+    public function update(string $id, Request $request)
+    {
+        $author = Author::find($id);
+
+        if (!$author) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Resource not found'
+            ], 404);
+        }
+
+        $validator = Validator::make($request->all(), [
+            'name' => 'required|string|max:255',
+            'bio' => 'nullable|string',
+            'photo' => 'nullable|image|mimes:jpeg,jpg,png|max:2048'
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => $validator->errors()
+            ], 422);
+        }
+
+        $data = [
+            'name' => $request->name,
+            'bio' => $request->bio,
+        ];
+
+        if ($request->hasFile('photo')) {
+            $image = $request->file('photo');
+            $image->store('authors', 'public');
+            if ($author->photo) {
+                Storage::disk('public')->delete('authors/' . $author->photo);
+            }
+            $data['photo'] = $image->hashName();
+        }
+
+        $author->update($data);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Resource updated successfully!',
+            'data' => $author
+        ], 200);
+    }
+
+    public function destroy(string $id)
+    {
+        $author = Author::find($id);
+
+        if (!$author) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Resource not found'
+            ], 404);
+        }
+        if ($author->photo) {
+            Storage::disk('public')->delete('authors/' . $author->photo);
+        }
+
+        $author->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'DELETE data resource'
+        ], 200);
+    }
+}
+
+```
+
+#### B. Screenshot Pengujian Endpoint Author
+
+**1. Show Author (GET)**
+<img width="711" height="416" alt="image" src="https://github.com/user-attachments/assets/72dedef6-55c0-42c1-9649-723d5dd7b5cb" />
+
+
+**2. Update Author (PUT/PATCH)**
+<img width="724" height="383" alt="image" src="https://github.com/user-attachments/assets/44c23958-d2cf-469c-8a51-1dcbea2b8e87" />
+
+
+**3. Destroy Author (DELETE)**
+<img width="725" height="320" alt="image" src="https://github.com/user-attachments/assets/f06fa226-3eb5-4178-b295-126f03749243" />
+
+
+---
+
+### Bagian 3: Validasi Data Tidak Ditemukan (Not Found)
+
+Pada bagian ini, pastikan endpoint mengembalikan respon error yang informatif (misal "Data tidak ditemukan") beserta HTTP Status Code `404 Not Found`.
+
+**1. Data Genre Tidak Ditemukan**
+<img width="716" height="293" alt="image" src="https://github.com/user-attachments/assets/e23953d8-3213-47e6-97fc-ce813b58caf8" />
+
+
+**2. Data Author Tidak Ditemukan**
+<img width="722" height="353" alt="image" src="https://github.com/user-attachments/assets/376a3168-f7ac-4f52-83b1-7be2de33142d" />
+
+---
+
+### Bagian 4: Penggunaan Route `apiResource`
+
+#### A. Konfigurasi Endpoint (`routes/api.php`)
+
+```php
+<?php
+
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\BookController;
+use App\Http\Controllers\GenreController;
+use App\Http\Controllers\AuthorController;
+
+Route::get('/user', function (Request $request) {
+    return $request->user();
+})->middleware('auth:sanctum');
+
+
+Route::apiResource('/books', BookController::class);
+Route::apiResource('/author', AuthorController::class);
+Route::apiResource('/genre',GenreController::class);
+```
+
+#### B. Hasil Route List
+<img width="908" height="389" alt="Screenshot 2026-04-27 091640" src="https://github.com/user-attachments/assets/1b5aa06c-c207-4b8e-a1c7-2ea3e625808b" />
+
+
